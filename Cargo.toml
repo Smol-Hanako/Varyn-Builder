@@ -1,0 +1,15 @@
+[package]
+name = "varyn-builder"
+version = "0.1.0"
+edition = "2024"
+authors = ["Lunar"]
+description = "A modular Minecraft bot for building schematics on anarchy servers"
+
+[dependencies]
+azalea = { git = "https://github.com/azalea-rs/azalea" }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+dotenvy = "0.15"          # For reading .env files
+serde = { version = "1.0", features = ["derive"] } # For structuring config data
+serde_json = "1.0"        # For reading config.json
+flate2 = "1.0"            # Schematics are GZipped, this unzips them
