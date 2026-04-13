@@ -1,28 +1,24 @@
 {
-  "home_name": "logo",
-  "build_y_level": 319,
+  "home_name": "ad",
   "obsidian_per_endchest": 8,
-  "schematic_path": "schematics/logo.schematic",
+  "shulker_quantity": 9,
+  "schematic_path": "Schematics/Estrogen_Seller.schem",
   "build_origin": [319, 319, 0],
   "tools": {
     "netherite_pickaxe": {
-      "chest_location": {"x": 120, "y": 100, "z": 100},
-      "quantity_per_trip": 1
+      "chest_location": {"x": 120, "y": 100, "z": 100}
     },
     "netherite_axe": {
-      "chest_location": {"x": 120, "y": 100, "z": 100},
-      "quantity_per_trip": 1
+      "chest_location": {"x": 120, "y": 100, "z": 100}
     }
   },
   "materials": {
     "obsidian": {
       "chest_location": {"x": 100, "y": 100, "z": 100},
-      "quantity_per_trip": 9,
       "is_stackable": true
     },
     "stone": {
       "chest_location": {"x": 110, "y": 100, "z": 100},
-      "quantity_per_trip": 9,
       "is_stackable": true
     }
   }

@@ -20,27 +20,12 @@ pub struct ChestLocation {
     pub z: i32,
 }
 
-/// Configuration for a tool
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolConfig {
-    pub chest_location: ChestLocation,
-    pub quantity_per_trip: u32,
-}
-
-/// Configuration for a material/block
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MaterialConfig {
-    pub chest_location: ChestLocation,
-    pub quantity_per_trip: u32,
-    pub is_stackable: bool,
-}
-
 /// Main configuration struct - holds all bot settings
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BotConfig {
     pub home_name: String,
-    pub build_y_level: i32,
     pub obsidian_per_endchest: i32,
+    pub shulker_quantity: u32, // Default items per shulker (usually 9 for blocks)
     pub schematic_path: String,
     pub build_origin: (i32, i32, i32),
     
@@ -49,6 +34,19 @@ pub struct BotConfig {
     
     // Per-material config (obsidian, stone, etc.)
     pub materials: HashMap<String, MaterialConfig>,
+}
+
+/// Configuration for a tool
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolConfig {
+    pub chest_location: ChestLocation,
+}
+
+/// Configuration for a material/block
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MaterialConfig {
+    pub chest_location: ChestLocation,
+    pub is_stackable: bool,
 }
 
 /// Account credentials from .env
@@ -96,14 +94,17 @@ pub fn load_bot_config(path: &str) -> anyhow::Result<BotConfig> {
     if config.home_name.is_empty() {
         anyhow::bail!("config.json: home_name cannot be empty");
     }
-    if config.build_y_level <= 0 {
-        anyhow::bail!("config.json: build_y_level must be positive");
+    if config.shulker_quantity == 0 {
+        anyhow::bail!("config.json: shulker_quantity must be > 0");
     }
     if config.tools.is_empty() {
         anyhow::bail!("config.json: tools section cannot be empty");
     }
     if config.materials.is_empty() {
         anyhow::bail!("config.json: materials section cannot be empty");
+    }
+    if config.build_origin.0 == 0 && config.build_origin.1 == 0 && config.build_origin.2 == 0 {
+        anyhow::bail!("config.json: build_origin must be set (not all zeros)");
     }
     
     Ok(config)
@@ -164,6 +165,27 @@ pub fn should_start_building() -> bool {
         .to_lowercase() == "true"
 }
 
+/// Load whitelisted usernames from .env
+/// Format: WHITELIST_USERS=Player1,Player2,Player3
+pub fn load_whitelist() -> anyhow::Result<Vec<String>> {
+    dotenvy::dotenv().ok();
+    
+    let whitelist_str = std::env::var("WHITELIST_USERS")
+        .unwrap_or_else(|_| String::new());
+    
+    if whitelist_str.is_empty() {
+        return Ok(vec![]);
+    }
+    
+    let users: Vec<String> = whitelist_str
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    
+    Ok(users)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -203,8 +225,8 @@ mod tests {
         // Config must have tools and materials
         let config = BotConfig {
             home_name: "Test".to_string(),
-            build_y_level: 319,
             obsidian_per_endchest: 8,
+            shulker_quantity: 9,
             schematic_path: "test.schematic".to_string(),
             build_origin: (0, 319, 0),
             tools: {
@@ -213,7 +235,6 @@ mod tests {
                     "pickaxe".to_string(),
                     ToolConfig {
                         chest_location: ChestLocation { x: 0, y: 100, z: 0 },
-                        quantity_per_trip: 1,
                     },
                 );
                 t
@@ -224,7 +245,6 @@ mod tests {
                     "obsidian".to_string(),
                     MaterialConfig {
                         chest_location: ChestLocation { x: 0, y: 100, z: 0 },
-                        quantity_per_trip: 9,
                         is_stackable: true,
                     },
                 );
@@ -233,7 +253,7 @@ mod tests {
         };
         
         assert!(!config.home_name.is_empty());
-        assert!(config.build_y_level > 0);
+        assert!(config.shulker_quantity > 0);
         assert!(!config.tools.is_empty());
         assert!(!config.materials.is_empty());
     }

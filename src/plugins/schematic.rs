@@ -121,7 +121,8 @@ pub struct SchematicVerification {
     pub unique_block_types: usize,
 }
 
-/// Load and parse a .schematic file
+/// Load and parse a .schematic or .schem file
+/// Supports both Sponge format (.schem) and legacy format (.schematic)
 /// The file is gzip-compressed NBT format
 /// 
 /// Uses azalea_nbt for parsing - fastest NBT parser in Rust
@@ -133,8 +134,10 @@ pub fn load_schematic(path: &str) -> anyhow::Result<Schematic> {
         anyhow::bail!("Schematic file not found: {}", path.display());
     }
     
-    if !path.extension().map_or(false, |e| e == "schematic") {
-        anyhow::bail!("File must be .schematic format");
+    // Check file extension - support both .schem and .schematic
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    if ext != "schematic" && ext != "schem" {
+        anyhow::bail!("File must be .schematic or .schem format (got .{})", ext);
     }
     
     // Open file and decompress (schematics are gzip compressed)
@@ -164,8 +167,14 @@ pub fn load_schematic(path: &str) -> anyhow::Result<Schematic> {
         },
     };
     
+    let format_type = match ext {
+        "schem" => "Sponge",
+        _ => "Legacy",
+    };
+    
     println!(
-        "[SCHEMATIC] ✓ Loaded: {} ({}x{}x{}, {} blocks)",
+        "[SCHEMATIC] ✓ Loaded {} format: {} ({}x{}x{}, {} blocks)",
+        format_type,
         path.display(),
         schematic.width,
         schematic.height,
